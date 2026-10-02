@@ -1,6 +1,7 @@
 import os
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -21,7 +22,7 @@ from PyQt6.QtWidgets import (
 from .fetcher import FetchThread
 from .downloader import DownloadThread
 from .models import Track
-from .utils import format_duration, ffmpeg_available
+from .utils import format_duration, ffmpeg_available, resource_path
 
 COL_CHECK, COL_TITLE, COL_ORIGIN, COL_DURATION, COL_STATUS = range(5)
 
@@ -30,6 +31,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("YouTube → MP3")
+        self.setWindowIcon(QIcon(resource_path("assets", "icon.png")))
         self.resize(940, 660)
 
         self.tracks: list[Track] = []

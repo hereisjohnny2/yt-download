@@ -58,3 +58,23 @@ python main.py
    salvos.
 5. Clique em **Baixar selecionados** e acompanhe o progresso na tabela e na
    barra inferior.
+
+## Empacotar como executável (PyInstaller)
+
+Gera um binário standalone em `dist/`, sem precisar do Python/venv instalado
+na máquina de destino.
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pyinstaller --noconfirm yt-download.spec
+```
+
+O executável fica em `dist/yt-download` (Linux/macOS) ou `dist/yt-download.exe`
+(Windows). O ícone do app (`assets/icon.png` / `assets/icon.ico`, gerado por
+`scripts/gen_icon.py`) é embutido automaticamente — no Windows/macOS ele
+aparece no próprio executável; no Linux, use-o ao criar um atalho `.desktop`
+apontando para `assets/icon.png`.
+
+O `ffmpeg` continua sendo necessário no sistema onde o executável roda (não é
+empacotado).

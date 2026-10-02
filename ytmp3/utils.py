@@ -1,7 +1,15 @@
+import os
 import re
 import shutil
+import sys
 
 _INVALID_CHARS = r'[\\/*?:"<>|]'
+
+
+def resource_path(*parts: str) -> str:
+    """Resolve a bundled resource path, both in dev mode and in a PyInstaller build."""
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(base, *parts)
 
 
 def sanitize_filename(name: str) -> str:
