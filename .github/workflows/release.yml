@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm yt-download.spec
+
+      - name: Package artifact (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          cd dist
+          chmod +x yt-download
+          tar -czf ../yt-download-${{ github.ref_name }}-linux-x86_64.tar.gz yt-download
+
+      - name: Package artifact (macOS)
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          cd dist
+          chmod +x yt-download
+          zip -r ../yt-download-${{ github.ref_name }}-macos-x86_64.zip yt-download
+
+      - name: Package artifact (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist\yt-download.exe -DestinationPath yt-download-${{ github.ref_name }}-windows-x86_64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-download-${{ matrix.platform }}
+          path: yt-download-${{ github.ref_name }}-${{ matrix.platform }}-x86_64.*
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=$(find artifacts -type f)
+          gh release create "${{ github.ref_name }}" $files \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
