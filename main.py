@@ -1,0 +1,18 @@
+import sys
+
+from PyQt6.QtWidgets import QApplication
+
+from ytmp3.main_window import MainWindow
+from ytmp3.styles import STYLESHEET
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setStyleSheet(STYLESHEET)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
