@@ -1,6 +1,7 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 import yt_dlp
 
+from . import deezer
 from .models import Track
 
 
@@ -8,6 +9,7 @@ class FetchThread(QThread):
     tracks_found = pyqtSignal(list)
     error = pyqtSignal(str)
     log = pyqtSignal(str)
+    not_found = pyqtSignal(list)
 
     def __init__(self, urls: list[str], parent=None):
         super().__init__(parent)
@@ -15,6 +17,7 @@ class FetchThread(QThread):
 
     def run(self):
         all_tracks: list[Track] = []
+        missing: list[str] = []
         opts = {
             "quiet": True,
             "no_warnings": True,
@@ -26,6 +29,9 @@ class FetchThread(QThread):
                 for url in self.urls:
                     url = url.strip()
                     if not url:
+                        continue
+                    if deezer.is_deezer_url(url):
+                        self._fetch_deezer(ydl, url, all_tracks, missing)
                         continue
                     try:
                         info = ydl.extract_info(url, download=False)
@@ -68,3 +74,39 @@ class FetchThread(QThread):
             return
 
         self.tracks_found.emit(all_tracks)
+        if missing:
+            self.not_found.emit(missing)
+
+    def _fetch_deezer(self, ydl, url: str, all_tracks: list[Track], missing: list[str]):
+        try:
+            playlist_title, deezer_tracks = deezer.fetch_playlist(url)
+        except Exception as exc:
+            self.log.emit(f"Erro ao processar {url}: {exc}")
+            return
+
+        origin = f"Deezer: {playlist_title}"
+        total = len(deezer_tracks)
+        for i, dt in enumerate(deezer_tracks, start=1):
+            self.log.emit(f"Buscando no YouTube ({i}/{total}): {dt.display_name}")
+            try:
+                result = ydl.extract_info(f"ytsearch1:{dt.display_name}", download=False)
+            except Exception:
+                result = None
+            entries = [e for e in (result or {}).get("entries") or [] if e]
+            if not entries:
+                missing.append(f"{dt.display_name} ({playlist_title})")
+                continue
+            entry = entries[0]
+            track_url = (
+                entry.get("webpage_url")
+                or entry.get("url")
+                or f"https://www.youtube.com/watch?v={entry.get('id')}"
+            )
+            all_tracks.append(
+                Track(
+                    url=track_url,
+                    title=dt.display_name,
+                    duration=entry.get("duration") or dt.duration,
+                    origin=origin,
+                )
+            )

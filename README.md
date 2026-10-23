@@ -7,6 +7,9 @@ converter para MP3.
 
 - Aceita links de vídeo único, música ou playlist, inclusive vários de uma vez
   (um por linha).
+- Playlists do Deezer (`https://www.deezer.com/playlist/...`): as músicas são
+  lidas pela API pública do Deezer e buscadas no YouTube; ao final da busca,
+  as que não forem encontradas são listadas.
 - Playlists e múltiplos links são expandidos em uma lista única de faixas
   para confirmação antes do download.
 - Cada faixa pode ser marcada/desmarcada individualmente.

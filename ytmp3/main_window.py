@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         title = QLabel("YouTube → MP3")
         title.setObjectName("appTitle")
         subtitle = QLabel(
-            "Cole links de vídeos, playlists ou músicas — um por linha. "
+            "Cole links de vídeos, playlists do YouTube ou do Deezer — um por linha. "
             "Playlists e múltiplos links são expandidos em uma lista para você escolher."
         )
         subtitle.setObjectName("appSubtitle")
@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
         self.input_box.setPlaceholderText(
             "https://www.youtube.com/watch?v=...\n"
             "https://www.youtube.com/playlist?list=...\n"
+            "https://www.deezer.com/playlist/...\n"
             "(pode colar vários links, um por linha)"
         )
         self.input_box.setFixedHeight(110)
@@ -151,6 +152,7 @@ class MainWindow(QMainWindow):
         self.fetch_thread = FetchThread(urls)
         self.fetch_thread.tracks_found.connect(self._on_tracks_found)
         self.fetch_thread.error.connect(self._on_fetch_error)
+        self.fetch_thread.not_found.connect(self._on_not_found)
         self.fetch_thread.log.connect(self.status_label.setText)
         self.fetch_thread.finished.connect(self._on_fetch_finished)
         self.fetch_thread.start()
@@ -162,6 +164,14 @@ class MainWindow(QMainWindow):
     def _on_fetch_error(self, message: str):
         QMessageBox.critical(self, "Erro ao buscar", message)
         self.status_label.setText("Erro ao buscar links.")
+
+    def _on_not_found(self, names: list[str]):
+        QMessageBox.warning(
+            self,
+            "Músicas não encontradas",
+            f"{len(names)} música(s) da playlist do Deezer não foram encontradas "
+            "no YouTube:\n\n" + "\n".join(f"• {n}" for n in names),
+        )
 
     def _on_tracks_found(self, tracks: list[Track]):
         if not tracks:
